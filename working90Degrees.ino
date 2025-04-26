@@ -75,7 +75,7 @@ const int encoderCPR = 400;
 const float wheelRadius = 0.05;
 const float my_pi = 3.14159265358979323846;
 
-float Kp1 = 1.0, Ki1 = 0.05, Kd1 = 0.1;
+float Kp1 = 0.8, Ki1 = 0.05, Kd1 = 0.1;
 float Kp2 = 0.8, Ki2 = 0.05, Kd2 = 0.1;
 float left_integral = 0.0, left_last_error = 0.0;
 float right_integral = 0.0, right_last_error = 0.0;
