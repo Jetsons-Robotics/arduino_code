@@ -413,7 +413,7 @@ void calculateMotorRPM() {
 void LeftmotorISR() {
   int state = digitalRead(LEFT_ENCODER_B);
   leftDirection = (state == HIGH) ? 1 : -1;
-  Lcount++;
+  Lcount--;
 }
 
 void RightmotorISR() {
