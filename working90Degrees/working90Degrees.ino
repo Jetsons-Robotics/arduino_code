@@ -35,20 +35,20 @@ ros::Subscriber<std_msgs::Int32> left_motor_sub("/desired_left_motor_rpm", &left
 ros::Subscriber<std_msgs::Int32> right_motor_sub("/desired_right_motor_rpm", &rightMotorCallback);
 
 // Motor pins
-#define MOTOR1_RV 8
-#define MOTOR1_EN 10
-#define MOTOR1_FR 11
-#define MOTOR1_BK 6
-#define MOTOR2_RV 7
-#define MOTOR2_EN 13
-#define MOTOR2_FR 5
-#define MOTOR2_BK 4
+#define MOTOR1_RV 7
+#define MOTOR1_EN 13
+#define MOTOR1_FR 5
+#define MOTOR1_BK 4
+#define MOTOR2_RV 8
+#define MOTOR2_EN 10
+#define MOTOR2_FR 11
+#define MOTOR2_BK 6
 
 // Encoder pins
-#define LEFT_ENCODER_A 18
-#define LEFT_ENCODER_B 2
-#define RIGHT_ENCODER_A 19
-#define RIGHT_ENCODER_B 3
+#define LEFT_ENCODER_A 19
+#define LEFT_ENCODER_B 3
+#define RIGHT_ENCODER_A 18
+#define RIGHT_ENCODER_B 2
 
 // Sensor input pins
 const int sensorInputPin1 = 31;
@@ -75,12 +75,12 @@ const int encoderCPR = 400;
 const float wheelRadius = 0.05;
 const float my_pi = 3.14159265358979323846;
 
-float Kp1 = 0.8, Ki1 = 0.05, Kd1 = 0.1;
+float Kp1 = 1.0, Ki1 = 0.05, Kd1 = 0.1;
 float Kp2 = 0.8, Ki2 = 0.05, Kd2 = 0.1;
 float left_integral = 0.0, left_last_error = 0.0;
 float right_integral = 0.0, right_last_error = 0.0;
-int leftPWMCommand = 255;
-int rightPWMCommand = 255;
+int leftPWMCommand = 150;
+int rightPWMCommand = 190;
 const int leftMinPWM = 0, leftMaxPWM = 255;
 const int rightMinPWM = 0, rightMaxPWM = 255;
 const float MaxRPM = 100.0;
@@ -167,7 +167,7 @@ void loop() {
   // Check the start/stop switch state (with debounce)
   bool currentSwitchState = digitalRead(START_STOP_PIN);
   if (currentSwitchState == LOW && lastSwitchState == HIGH &&
-    (millis() - lastDebounceTime > debounceDelay)) {
+	(millis() - lastDebounceTime > debounceDelay)) {
   robotRunning = !robotRunning;
   lastDebounceTime = millis();
   }
@@ -187,89 +187,89 @@ void loop() {
   int sensorState4 = digitalRead(sensorInputPin4);
     
   // Determine the motion state based on sensor inputs
-            
+       	 
   if (sensorState1 == LOW && sensorState2 == LOW && sensorState3 == LOW && sensorState4 == LOW) {
-    currentMotion = MOTION_FORWARD;
+	currentMotion = MOTION_FORWARD;
   }
   else if (sensorState1 == LOW && sensorState2 == LOW) {
-    currentMotion = MOTION_STOP;
+	currentMotion = MOTION_STOP;
   }
   else if (sensorState3 == LOW && sensorState4 == LOW) {
-            currentMotion = TURN_90;
+        	currentMotion = TURN_90;
   }
   else if (sensorState2 == LOW) {
-    currentMotion = MOTION_BACKWARD;
+	currentMotion = MOTION_BACKWARD;
   }
   else if (sensorState1 == LOW) {
-    currentMotion = MOTION_TURN;
+	currentMotion = MOTION_TURN;
   }
   else {
-    // Default state: stop the robot if no conditions are met
-    currentMotion = DEFAULT_STATE;
+	// Default state: stop the robot if no conditions are met
+	currentMotion = DEFAULT_STATE;
   }
     
   // Reset stop flag if we're not in STOP state
   if (currentMotion != MOTION_STOP) {
-    stopInitiated = false;
+	stopInitiated = false;
   }
     
   // Act on the current motion state using a switch-case
   switch (currentMotion) {
-    case MOTION_FORWARD:
-      // Execute forward motion
-      digitalWrite(MOTOR1_FR, LOW);
-      digitalWrite(MOTOR2_FR, HIGH);
-      // Reset PID control variables
-      left_integral = 0;
-      left_last_error = 0;
-      right_integral = 0;
-      right_last_error = 0;
-      v = 0.15;
-      w = 0.0;
-      break;
-     
-    case MOTION_STOP:
-      // Two-step stop: first, move backward then fully stop.
-      if (!stopInitiated) {
-        // Initiate backward movement
-        digitalWrite(MOTOR1_FR, HIGH);
-        digitalWrite(MOTOR2_FR, HIGH);
-        v = 0.05;
-        w = 0.0;
-        stopStartTime = millis();
-        stopInitiated = true;
-      } else {
-        // Check if the backward duration has elapsed
-        if (millis() - stopStartTime > backwardDuration) {
-          // Now fully stop the robot
-          digitalWrite(MOTOR1_BK, HIGH);
-          digitalWrite(MOTOR2_BK, HIGH);
-          digitalWrite(MOTOR1_EN, LOW);
-          digitalWrite(MOTOR2_EN, LOW);
-          v = 0.0;
-          w = 0.0;
-        }
-      }
-      break;
-     
-    case MOTION_BACKWARD:
-      // Regular backward motion
-      digitalWrite(MOTOR1_FR, HIGH);
-      digitalWrite(MOTOR2_FR, HIGH);
-      v = 0.05;
-      w = 0.0;
-      break;
+	case MOTION_FORWARD:
+  	// Execute forward motion
+  	digitalWrite(MOTOR1_FR, LOW);
+  	digitalWrite(MOTOR2_FR, LOW);
+  	// Reset PID control variables
+  	left_integral = 0;
+  	left_last_error = 0;
+  	right_integral = 0;
+  	right_last_error = 0;
+  	v = 0.15;
+  	w = 0.0;
+  	break;
+	 
+	case MOTION_STOP:
+  	// Two-step stop: first, move backward then fully stop.
+  	if (!stopInitiated) {
+    	// Initiate backward movement
+    	digitalWrite(MOTOR1_FR, HIGH);
+    	digitalWrite(MOTOR2_FR, HIGH);
+    	v = 0.05;
+    	w = 0.0;
+    	stopStartTime = millis();
+    	stopInitiated = true;
+  	} else {
+    	// Check if the backward duration has elapsed
+    	if (millis() - stopStartTime > backwardDuration) {
+      	// Now fully stop the robot
+      	digitalWrite(MOTOR1_BK, HIGH);
+      	digitalWrite(MOTOR2_BK, HIGH);
+      	digitalWrite(MOTOR1_EN, LOW);
+      	digitalWrite(MOTOR2_EN, LOW);
+      	v = 0.0;
+      	w = 0.0;
+    	}
+  	}
+  	break;
+	 
+	case MOTION_BACKWARD:
+  	// Regular backward motion
+  	digitalWrite(MOTOR1_FR, HIGH);
+  	digitalWrite(MOTOR2_FR, HIGH);
+  	v = 0.05;
+  	w = 0.0;
+  	break;
 
-     
-    case MOTION_TURN:
-      // Execute turn: one motor stops while the other remains active
-      digitalWrite(MOTOR1_FR, HIGH);
-      digitalWrite(MOTOR2_FR, LOW);
-      v = 0.0;
-      w = 0.17;
-            turn90Initiated = false;
-      break;
-  
+	 
+	case MOTION_TURN:
+  	// Execute turn: one motor stops while the other remains active
+  	digitalWrite(MOTOR1_FR, HIGH);
+  	digitalWrite(MOTOR2_FR, LOW);
+  	v = 0.0;
+  	w = 0.17;
+        	turn90Initiated = false;
+  	break;
+ 
 case TURN_90:
 // Initiate the turn if not already done
 if (!turn90Initiated) {
@@ -295,15 +295,15 @@ w = 0.0;
 }
 break;
  
-    case DEFAULT_STATE:
-      // Safety stop: disable motors
-      digitalWrite(MOTOR1_BK, HIGH);
-      digitalWrite(MOTOR2_BK, HIGH);
-      digitalWrite(MOTOR1_EN, LOW);
-      digitalWrite(MOTOR2_EN, LOW);
-      v = 0.0;
-      w = 0.0;
-      break;
+	case DEFAULT_STATE:
+  	// Safety stop: disable motors
+  	digitalWrite(MOTOR1_BK, HIGH);
+  	digitalWrite(MOTOR2_BK, HIGH);
+  	digitalWrite(MOTOR1_EN, LOW);
+  	digitalWrite(MOTOR2_EN, LOW);
+  	v = 0.0;
+  	w = 0.0;
+  	break;
   turn90Initiated = false;
   }
  
@@ -314,14 +314,14 @@ break;
   nh.spinOnce();
 
   if (!nh.connected()) {
-    // Stop motors safely if ROS connection is lost
-    digitalWrite(MOTOR1_BK, HIGH);
-    digitalWrite(MOTOR2_BK, HIGH);
-    digitalWrite(MOTOR1_EN, LOW);
-    digitalWrite(MOTOR2_EN, LOW);
-    analogWrite(MOTOR1_RV, 0);
-    analogWrite(MOTOR2_RV, 0);
-    return;  // Exit the loop early
+	// Stop motors safely if ROS connection is lost
+	digitalWrite(MOTOR1_BK, HIGH);
+	digitalWrite(MOTOR2_BK, HIGH);
+	digitalWrite(MOTOR1_EN, LOW);
+	digitalWrite(MOTOR2_EN, LOW);
+	analogWrite(MOTOR1_RV, 0);
+	analogWrite(MOTOR2_RV, 0);
+	return;  // Exit the loop early
   }
     
   // Publish messages at the defined interval
@@ -413,7 +413,7 @@ void calculateMotorRPM() {
 void LeftmotorISR() {
   int state = digitalRead(LEFT_ENCODER_B);
   leftDirection = (state == HIGH) ? 1 : -1;
-  Lcount--;
+  Lcount++;
 }
 
 void RightmotorISR() {
