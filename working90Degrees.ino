@@ -217,8 +217,8 @@ void loop() {
   switch (currentMotion) {
     case MOTION_FORWARD:
       // Execute forward motion
-      digitalWrite(MOTOR1_FR, HIGH);
-      digitalWrite(MOTOR2_FR, LOW);
+      digitalWrite(MOTOR1_FR, LOW);
+      digitalWrite(MOTOR2_FR, HIGH);
       // Reset PID control variables
       left_integral = 0;
       left_last_error = 0;
