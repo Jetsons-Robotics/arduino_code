@@ -35,20 +35,20 @@ ros::Subscriber<std_msgs::Int32> left_motor_sub("/desired_left_motor_rpm", &left
 ros::Subscriber<std_msgs::Int32> right_motor_sub("/desired_right_motor_rpm", &rightMotorCallback);
 
 // Motor pins
-#define MOTOR1_RV 7
-#define MOTOR1_EN 13
-#define MOTOR1_FR 5
-#define MOTOR1_BK 4
-#define MOTOR2_RV 8
-#define MOTOR2_EN 10
-#define MOTOR2_FR 11
-#define MOTOR2_BK 6
+#define MOTOR1_RV 8
+#define MOTOR1_EN 10
+#define MOTOR1_FR 11
+#define MOTOR1_BK 6
+#define MOTOR2_RV 7
+#define MOTOR2_EN 13
+#define MOTOR2_FR 5
+#define MOTOR2_BK 4
 
 // Encoder pins
-#define LEFT_ENCODER_A 19
-#define LEFT_ENCODER_B 3
-#define RIGHT_ENCODER_A 18
-#define RIGHT_ENCODER_B 2
+#define LEFT_ENCODER_A 18
+#define LEFT_ENCODER_B 2
+#define RIGHT_ENCODER_A 19
+#define RIGHT_ENCODER_B 3
 
 // Sensor input pins
 const int sensorInputPin1 = 31;
@@ -79,8 +79,8 @@ float Kp1 = 0.8, Ki1 = 0.05, Kd1 = 0.1;
 float Kp2 = 0.8, Ki2 = 0.05, Kd2 = 0.1;
 float left_integral = 0.0, left_last_error = 0.0;
 float right_integral = 0.0, right_last_error = 0.0;
-int leftPWMCommand = 150;
-int rightPWMCommand = 190;
+int leftPWMCommand = 255;
+int rightPWMCommand = 255;
 const int leftMinPWM = 0, leftMaxPWM = 255;
 const int rightMinPWM = 0, rightMaxPWM = 255;
 const float MaxRPM = 100.0;
