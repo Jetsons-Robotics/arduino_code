@@ -1,3 +1,4 @@
+
 #include <ros.h>
 #include <std_msgs/Int32.h>
 #include <std_msgs/Float32.h>
@@ -167,19 +168,12 @@ void loop() {
   // Check the start/stop switch state (with debounce)
   bool currentSwitchState = digitalRead(START_STOP_PIN);
   if (currentSwitchState == LOW && lastSwitchState == HIGH &&
-      (millis() - lastDebounceTime > debounceDelay)) {
-    robotRunning = !robotRunning; // Toggle robot running state
-    lastDebounceTime = millis();
+	(millis() - lastDebounceTime > debounceDelay)) {
+  robotRunning = !robotRunning;
+  lastDebounceTime = millis();
   }
-
-  // Update lastSwitchState
   lastSwitchState = currentSwitchState;
-
-  // Force default state if robot is stopped
-  if (!robotRunning) {
-    currentMotion = DEFAULT_STATE; // Force the robot to stop
-  }
-
+ 
   if (robotRunning) {
   // Enable motors (set reverse pins low and enable high)
   digitalWrite(MOTOR1_BK, LOW);
@@ -310,20 +304,11 @@ break;
   	digitalWrite(MOTOR2_EN, LOW);
   	v = 0.0;
   	w = 0.0;
+  	break;
   turn90Initiated = false;
   }
   nh.spinOnce();
-  if (!nh.connected()) {
-	// Stop motors safely if ROS connection is lost
-	digitalWrite(MOTOR1_BK, HIGH);
-	digitalWrite(MOTOR2_BK, HIGH);
-	digitalWrite(MOTOR1_EN, LOW);
-	digitalWrite(MOTOR2_EN, LOW);
-	analogWrite(MOTOR1_RV, 0);
-	analogWrite(MOTOR2_RV, 0);
-	return;  // Exit the loop early
-  }
-// Publish messages at the defined interval
+  // Publish messages at the defined interval
   unsigned long currentMillis = millis();
   if (currentMillis - lastPublishTime >= publishInterval) {
   lastPublishTime = currentMillis;
@@ -338,9 +323,25 @@ break;
   theta_msg.data = Theta;
   theta_pub.publish(&theta_msg);
   }
- 
 }
 
+
+
+ 
+
+  if (!nh.connected()) {
+	// Stop motors safely if ROS connection is lost
+	digitalWrite(MOTOR1_BK, HIGH);
+	digitalWrite(MOTOR2_BK, HIGH);
+	digitalWrite(MOTOR1_EN, LOW);
+	digitalWrite(MOTOR2_EN, LOW);
+	analogWrite(MOTOR1_RV, 0);
+	analogWrite(MOTOR2_RV, 0);
+	return;  // Exit the loop early
+  }
+    
+
+ 
  
   // Calculate RPM and adjust motor commands via PID
   calculateMotorRPM();
