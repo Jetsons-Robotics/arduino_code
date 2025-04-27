@@ -166,10 +166,11 @@ const unsigned long backwardDuration = 3000; // Duration in milliseconds for mov
 void loop() {
   // Check the start/stop switch state (with debounce)
   bool currentSwitchState = digitalRead(START_STOP_PIN);
-  if (currentSwitchState == LOW && lastSwitchState == HIGH &&
-	(millis() - lastDebounceTime > debounceDelay)) {
-  robotRunning = !robotRunning;
-  lastDebounceTime = millis();
+  if (currentSwitchState != lastSwitchState) {
+     if (currentSwitchState == LOW && lastSwitchState == HIGH && (millis() - lastDebounceTime > debounceDelay)) {
+      robotRunning = !robotRunning;
+      lastDebounceTime = millis();
+     }
   }
   lastSwitchState = currentSwitchState;
  
