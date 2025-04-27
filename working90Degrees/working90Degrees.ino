@@ -1,4 +1,3 @@
-
 #include <ros.h>
 #include <std_msgs/Int32.h>
 #include <std_msgs/Float32.h>
@@ -57,14 +56,15 @@ const int sensorInputPin2 = 32;
 const int sensorInputPin3 = 33;
 const int sensorInputPin4 = 34;
 
-// Start/Stop switch pin (wired with internal pull-up; connect between pin 12 and GND)
+// Start/Stop switch pin
 #define START_STOP_PIN 12
 
 volatile unsigned long Lcount = 0;
 volatile unsigned long Rcount = 0;
-volatile int leftDirection = 1;  // 1 for forward, -1 for reverse
-volatile int rightDirection = 1; // 1 for forward, -1 for reverse
+volatile int leftDirection = 1;
+volatile int rightDirection = 1;
 
+// Timing for RPM calculations
 unsigned long prevTime0 = 0;
 unsigned long prevTime1 = 0;
 unsigned long prevLeftEncoder = 0;
@@ -76,6 +76,7 @@ const int encoderCPR = 400;
 const float wheelRadius = 0.05;
 const float my_pi = 3.14159265358979323846;
 
+// PID parameters
 float Kp1 = 1.0, Ki1 = 0.05, Kd1 = 0.1;
 float Kp2 = 0.8, Ki2 = 0.05, Kd2 = 0.1;
 float left_integral = 0.0, left_last_error = 0.0;
@@ -90,21 +91,29 @@ float v = 0.0;
 float w = 0.0;
 float Theta = 0.0;
 
-// Toggle variables for the start/stop switch
+// Debounce variables
 bool robotRunning = false;
-bool lastSwitchState = HIGH;
+bool lastButtonReading = HIGH;
+bool buttonState = HIGH;      // debounced state
 unsigned long lastDebounceTime = 0;
 const unsigned long debounceDelay = 50;
 
+// ROS message timing
 unsigned long lastPublishTime = 0;
 const int publishInterval = 100;
 
 void thetaCallback(const std_msgs::Float32& msg) {
-  Theta = msg.data;  // Store the received theta value
+  Theta = msg.data;
 }
-
 ros::Subscriber<std_msgs::Float32> theta_sub("/theta_degrees", &thetaCallback);
 
+enum RobotMotion { MOTION_FORWARD, MOTION_STOP, MOTION_BACKWARD, MOTION_TURN, TURN_90, DEFAULT_STATE };
+RobotMotion currentMotion = DEFAULT_STATE;
+bool turn90Initiated = false;
+float startThetaTurn90 = 0.0;
+bool stopInitiated = false;
+unsigned long stopStartTime = 0;
+const unsigned long backwardDuration = 3000;
 
 void setup() {
   nh.initNode();
@@ -129,7 +138,6 @@ void setup() {
   pinMode(RIGHT_ENCODER_A, INPUT_PULLUP);
   pinMode(RIGHT_ENCODER_B, INPUT_PULLUP);
 
-  // Set up the start/stop switch with internal pull-up
   pinMode(START_STOP_PIN, INPUT_PULLUP);
 
   attachInterrupt(digitalPinToInterrupt(LEFT_ENCODER_A), LeftmotorISR, RISING);
@@ -145,35 +153,27 @@ void setup() {
   pinMode(MOTOR2_BK, OUTPUT);
 }
 
-// Define motion states
-enum RobotMotion {
-  MOTION_FORWARD,
-  MOTION_STOP,
-  MOTION_BACKWARD,
-  MOTION_TURN,
-  TURN_90,
-  DEFAULT_STATE,
-};
-
-bool turn90Initiated = false;
-float startThetaTurn90 = 0.0;
-RobotMotion currentMotion = MOTION_STOP; // default state
-
-// Global variables for stop sequence
-bool stopInitiated = false;
-unsigned long stopStartTime = 0;
-const unsigned long backwardDuration = 3000; // Duration in milliseconds for moving backward
-
 void loop() {
-  // Check the start/stop switch state (with debounce)
-  bool currentSwitchState = digitalRead(START_STOP_PIN);
-  if (currentSwitchState == LOW && lastSwitchState == HIGH &&
-	(millis() - lastDebounceTime > debounceDelay)) {
-  robotRunning = !robotRunning;
-  lastDebounceTime = millis();
+  // Read the button
+  bool reading = digitalRead(START_STOP_PIN);
+
+  // Reset debounce timer on state change
+  if (reading != lastButtonReading) {
+    lastDebounceTime = millis();
   }
-  lastSwitchState = currentSwitchState;
- 
+  
+  // If stable beyond debounce delay, update buttonState
+  if ((millis() - lastDebounceTime) > debounceDelay) {
+    if (reading != buttonState) {
+      buttonState = reading;
+      // Only toggle on button press (LOW)
+      if (buttonState == LOW) {
+        robotRunning = !robotRunning;
+      }
+    }
+  }
+  lastButtonReading = reading;
+
   if (robotRunning) {
   // Enable motors (set reverse pins low and enable high)
   digitalWrite(MOTOR1_BK, LOW);
@@ -307,43 +307,26 @@ break;
   	break;
   turn90Initiated = false;
   }
-  nh.spinOnce();
-  // Publish messages at the defined interval
-  unsigned long currentMillis = millis();
-  if (currentMillis - lastPublishTime >= publishInterval) {
-  lastPublishTime = currentMillis;
-  left_motor_pub.publish(&left_rpm_msg);
-  right_motor_pub.publish(&right_rpm_msg);
-  left_velocity_pub.publish(&left_velocity_msg);
-  right_velocity_pub.publish(&right_velocity_msg);
-  v_msg.data = v;
-  w_msg.data = w;
-  v_pub.publish(&v_msg);
-  w_pub.publish(&w_msg);
-  theta_msg.data = Theta;
-  theta_pub.publish(&theta_msg);
-  }
+ 
 }
 
+  nh.spinOnce();
 
-
- 
-
-  if (!nh.connected()) {
-	// Stop motors safely if ROS connection is lost
-	digitalWrite(MOTOR1_BK, HIGH);
-	digitalWrite(MOTOR2_BK, HIGH);
-	digitalWrite(MOTOR1_EN, LOW);
-	digitalWrite(MOTOR2_EN, LOW);
-	analogWrite(MOTOR1_RV, 0);
-	analogWrite(MOTOR2_RV, 0);
-	return;  // Exit the loop early
+  unsigned long currentMillis = millis();
+  if (currentMillis - lastPublishTime >= publishInterval) {
+    lastPublishTime = currentMillis;
+    left_motor_pub.publish(&left_rpm_msg);
+    right_motor_pub.publish(&right_rpm_msg);
+    left_velocity_pub.publish(&left_velocity_msg);
+    right_velocity_pub.publish(&right_velocity_msg);
+    v_msg.data = v;
+    w_msg.data = w;
+    v_pub.publish(&v_msg);
+    w_pub.publish(&w_msg);
+    theta_msg.data = Theta;
+    theta_pub.publish(&theta_msg);
   }
-    
 
- 
- 
-  // Calculate RPM and adjust motor commands via PID
   calculateMotorRPM();
 }
 
