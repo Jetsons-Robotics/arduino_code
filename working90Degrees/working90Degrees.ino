@@ -313,9 +313,6 @@ break;
   turn90Initiated = false;
   }
   nh.spinOnce();
-}
-
-
   if (!nh.connected()) {
 	// Stop motors safely if ROS connection is lost
 	digitalWrite(MOTOR1_BK, HIGH);
@@ -326,6 +323,8 @@ break;
 	analogWrite(MOTOR2_RV, 0);
 	return;  // Exit the loop early
   }
+}
+
     
   // Publish messages at the defined interval
   unsigned long currentMillis = millis();
