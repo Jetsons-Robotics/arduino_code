@@ -323,10 +323,7 @@ break;
 	analogWrite(MOTOR2_RV, 0);
 	return;  // Exit the loop early
   }
-}
-
-    
-  // Publish messages at the defined interval
+// Publish messages at the defined interval
   unsigned long currentMillis = millis();
   if (currentMillis - lastPublishTime >= publishInterval) {
   lastPublishTime = currentMillis;
@@ -342,6 +339,8 @@ break;
   theta_pub.publish(&theta_msg);
   }
  
+}
+
  
   // Calculate RPM and adjust motor commands via PID
   calculateMotorRPM();
