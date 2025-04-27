@@ -166,14 +166,20 @@ const unsigned long backwardDuration = 3000; // Duration in milliseconds for mov
 void loop() {
   // Check the start/stop switch state (with debounce)
   bool currentSwitchState = digitalRead(START_STOP_PIN);
-  if (currentSwitchState != lastSwitchState) {
-     if (currentSwitchState == LOW && lastSwitchState == HIGH && (millis() - lastDebounceTime > debounceDelay)) {
-      robotRunning = !robotRunning;
-      lastDebounceTime = millis();
-     }
+  if (currentSwitchState == LOW && lastSwitchState == HIGH &&
+      (millis() - lastDebounceTime > debounceDelay)) {
+    robotRunning = !robotRunning; // Toggle robot running state
+    lastDebounceTime = millis();
   }
+
+  // Update lastSwitchState
   lastSwitchState = currentSwitchState;
- 
+
+  // Force default state if robot is stopped
+  if (!robotRunning) {
+    currentMotion = DEFAULT_STATE; // Force the robot to stop
+  }
+
   if (robotRunning) {
   // Enable motors (set reverse pins low and enable high)
   digitalWrite(MOTOR1_BK, LOW);
@@ -304,15 +310,11 @@ break;
   	digitalWrite(MOTOR2_EN, LOW);
   	v = 0.0;
   	w = 0.0;
-  	break;
   turn90Initiated = false;
   }
- 
+  nh.spinOnce();
 }
 
-
-
-  nh.spinOnce();
 
   if (!nh.connected()) {
 	// Stop motors safely if ROS connection is lost
