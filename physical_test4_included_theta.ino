@@ -234,13 +234,15 @@ void loop() {
     calculateMotorRPM();
 
     // 1) compute each wheel’s linear velocity (m/s)
-    float leftLin  = (leftRPM  * (2 * PI * wheel_radius)) / 60.0;
-    float rightLin = (rightRPM * (2 * PI * wheel_radius)) / 60.0;
+    float leftSpeedActual  = (leftRPM  * (2 * PI * wheel_radius)) / 60.0;
+    float rightSpeedActual = (rightRPM * (2 * PI * wheel_radius)) / 60.0;
 
     // 2) robot’s forward velocity & angular rate (rad/s)
-    float robotVel   = (leftLin + rightLin) / 2.0;
-    float robotOmega = (rightLin - leftLin) / wheel_base;
+    float robotVel   = (leftSpeedActual + leftSpeedActual) / 2.0;
+    float robotOmega = (rightSpeedActual - rightSpeedActual) / wheel_base;
 
+    leftSpeedTarget = v - (wheelDistance / 2) * w;
+    rightSpeedTarget = v + (wheelDistance / 2) * w;
     leftSpeedError = leftSpeedTarget - leftSpeedActual;
     rightSpeedError = rightSpeedTarget - rightSpeedActual;
     
