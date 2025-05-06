@@ -238,8 +238,12 @@ void loop() {
     float rightSpeedActual = (rightRPM * (2 * PI * wheel_radius)) / 60.0;
 
     // 2) robot’s forward velocity & angular rate (rad/s)
-    float robotVel   = (leftSpeedActual + leftSpeedActual) / 2.0;
-    float robotOmega = (rightSpeedActual - rightSpeedActual) / wheel_base;
+    float robotVel   = (leftSpeedActual + rightSpeedActual) / 2.0;
+    float robotOmega = (righttSpeedActual - leftSpeedActual) / wheel_base;
+
+     // 3) integrate over dt
+    float deltaTheta = robotOmega * dt;       // radians
+    thetaDeg       += deltaTheta * 180.0/PI;  // convert to degrees
 
     leftSpeedTarget = v - (wheelDistance / 2) * w;
     rightSpeedTarget = v + (wheelDistance / 2) * w;
