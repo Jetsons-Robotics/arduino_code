@@ -241,9 +241,21 @@ void loop() {
     float robotVel   = (leftLin + rightLin) / 2.0;
     float robotOmega = (rightLin - leftLin) / wheel_base;
 
-    // 3) integrate over dt
-    float deltaTheta = robotOmega * dt;       // radians
-    thetaDeg       += deltaTheta * 180.0/PI;  // convert to degrees
+    leftSpeedError = leftSpeedTarget - leftSpeedActual;
+    rightSpeedError = rightSpeedTarget - rightSpeedActual;
+    
+    //PID Control
+    leftErrorSum += leftSpeedError;
+    rightErrorSum += rightSpeedError;
+
+    speedSetLeft = KpLeft * leftSpeedError + KiLeft * leftErrorSum + KdLeft * (leftSpeedError - leftErrorPrevious);
+    speedSetRight = KpRight * rightSpeedError + KiRight * rightErrorSum + KdRight * (rightSpeedError - rightErrorPrevious);
+
+    leftErrorPrevious = leftSpeedError;
+    rightErrorPrevious = rightSpeedError;
+    /* PID implementation Ends */
+
+
 
     // 4) report
     // Serial.print(" θ="); 
