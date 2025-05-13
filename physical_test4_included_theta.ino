@@ -261,13 +261,13 @@ void calculateMotorRPM() {
   // Calculate Left Motor RPM
   volatile long currentLeftEncoder = Lcount;
   volatile long deltaLeft = currentLeftEncoder - prevLeftEncoder;
-  leftRPM = ((100 * deltaLeft) / encoderCPR) * 6;  // 600/100
+  leftRPM = ((600 * deltaLeft) / encoderCPR);  // 600/100
   prevLeftEncoder = currentLeftEncoder;
 
   // Calculate Right Motor RPM
   volatile long currentRightEncoder = Rcount;
   volatile long deltaRight = currentRightEncoder - prevRightEncoder;
-  rightRPM = ((100 * deltaRight) / encoderCPR) * 6;
+  rightRPM = ((600 * deltaRight) / encoderCPR);
   prevRightEncoder = currentRightEncoder;
 
 
