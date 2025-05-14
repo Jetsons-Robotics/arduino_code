@@ -18,38 +18,41 @@ ros::NodeHandle nh;
 
 // Helper: stop motor cleanly
 void stopMotor(int en, int rv, int bk) {
-  analogWrite(rv, 0);
+  analogWrite(rv, 255);     // Inverted logic: 255 = stop
   digitalWrite(en, LOW);
-  digitalWrite(bk, HIGH);  // Engage brake
+  digitalWrite(bk, HIGH);   // Engage brake
 }
 
-// Helper: drive motor with speed and direction
-void driveMotor(int en, int fr, int bk, int rv, int speed, bool forward) {
-  if (speed == 0) {
+// Helper: drive motor using inverted PWM logic
+void driveMotor(int en, int fr, int bk, int rv, int pwmValue, bool forward) {
+  if (pwmValue >= 255) {
     stopMotor(en, rv, bk);
     return;
   }
 
-  digitalWrite(bk, LOW);         // Disable brake
-  digitalWrite(en, HIGH);        // Enable motor
-  digitalWrite(fr, forward ? LOW : HIGH); // Direction control
-  analogWrite(rv, constrain(abs(speed), 255, 0));  // PWM speed
+  digitalWrite(bk, LOW);                         // Disable brake
+  digitalWrite(en, HIGH);                        // Enable motor
+  digitalWrite(fr, forward ? LOW : HIGH);        // Set direction
+  analogWrite(rv, pwmValue);                     // Apply inverted PWM directly
 }
 
 void cmdVelCallback(const geometry_msgs::Twist& cmd_msg) {
   float linear = cmd_msg.linear.x;
   float angular = cmd_msg.angular.z;
 
-  // Compute base speeds
-  int leftSpeed = int((linear - angular * 0.5) * 255);
-  int rightSpeed = int((linear + angular * 0.5) * 255);
+  // Compute raw motor output (range -1 to 1)
+  float leftRaw = linear - angular * 0.5;
+  float rightRaw = linear + angular * 0.5;
 
-  // Adjust for opposite motor mounting (invert direction of one motor)
-  bool leftForward = leftSpeed < 0;
-  bool rightForward = rightSpeed >= 0;  // Reversed motor mounting!
+  // Inverted PWM logic: 255 = stop, 0 = full speed
+  int leftPWM = 255 - int(constrain(abs(leftRaw), 0, 1.0) * 255);
+  int rightPWM = 255 - int(constrain(abs(rightRaw), 0, 1.0) * 255);
 
-  driveMotor(MOTOR1_EN, MOTOR1_FR, MOTOR1_BK, MOTOR1_RV, leftSpeed, leftForward);
-  driveMotor(MOTOR2_EN, MOTOR2_FR, MOTOR2_BK, MOTOR2_RV, rightSpeed, rightForward);
+  bool leftForward = leftRaw >= 0;
+  bool rightForward = rightRaw >= 0;
+
+  driveMotor(MOTOR1_EN, MOTOR1_FR, MOTOR1_BK, MOTOR1_RV, leftPWM, leftForward);
+  driveMotor(MOTOR2_EN, MOTOR2_FR, MOTOR2_BK, MOTOR2_RV, rightPWM, rightForward);
 }
 
 ros::Subscriber<geometry_msgs::Twist> sub("cmd_vel", cmdVelCallback);
@@ -78,3 +81,4 @@ void loop() {
   nh.spinOnce();
   delay(10);
 }
+
