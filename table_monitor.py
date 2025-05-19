@@ -4,20 +4,19 @@ from std_msgs.msg import Float32, Int32
 import threading
 import os
 
-# Dictionary to store the latest values
 data = {
-    # 'encoder_left': None,
-    # 'encoder_right': None,
+    'encoder_left': None,
+    'encoder_right': None,
     'omega_est': None,
     'rpm_left': None,
     'rpm_right': None,
     'theta': None,
     'v_est': None,
-    # 'vel_left': None,
-    # 'vel_right': None
+    'vel_left': None,
+    'vel_right': None,
+    'cpu_temp': None  # New: Raspberry Pi CPU temperature
 }
 
-# Lock for thread-safe updates
 lock = threading.Lock()
 
 def make_callback(topic_name):
@@ -26,11 +25,22 @@ def make_callback(topic_name):
             data[topic_name] = msg.data
     return callback
 
+def read_cpu_temp():
+    try:
+        with open("/sys/class/thermal/thermal_zone0/temp", "r") as f:
+            raw = f.read().strip()
+            return float(raw) / 1000.0
+    except:
+        return None
+
 def print_table():
-    rate = rospy.Rate(5)  # 5 Hz update rate
+    rate = rospy.Rate(5)  # 5 Hz
     while not rospy.is_shutdown():
         with lock:
-            os.system('clear')  # or 'cls' on Windows
+            # Update CPU temperature
+            data['cpu_temp'] = read_cpu_temp()
+
+            os.system('clear')  # Use 'cls' for Windows
             print(f"{'Topic':<15} | {'Value':>10}")
             print("-" * 28)
             for key in data:
@@ -42,14 +52,11 @@ def print_table():
 def main():
     rospy.init_node('live_table_monitor', anonymous=True)
 
-    # List of topics and assumed message types
-    topics = list(data.keys())
+    ros_topics = [k for k in data if k != 'cpu_temp']  # Exclude cpu_temp
 
-    for topic in topics:
-        # Assuming all are Float32; if any are Int32, you can handle that here
+    for topic in ros_topics:
         rospy.Subscriber(f"/{topic}", Float32, make_callback(topic))
 
-    # Start printing thread
     thread = threading.Thread(target=print_table)
     thread.start()
 
@@ -57,4 +64,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
