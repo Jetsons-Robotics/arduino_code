@@ -79,8 +79,40 @@ def ros_listen():
             rospy.Subscriber(f'/{key}', Float32, make_callback(key))
     rospy.spin()
 
+def start_roscore():
+    try:
+        # Check if ROS Master is already running
+        subprocess.check_output(['rosnode', 'list'], stderr=subprocess.DEVNULL)
+        print("roscore is already running.")
+        return None
+    except subprocess.CalledProcessError:
+        print("Starting roscore...")
+        roscore_process = subprocess.Popen(
+            ['roscore'],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            preexec_fn=os.setsid
+        )
+        import time
+        time.sleep(2)  # Give time for roscore to initialize
+        return roscore_process
+
+# Start roscore if not already running
+roscore_process = start_roscore()
+
+# Optionally stop it on exit
+import atexit
+if roscore_process:
+    atexit.register(lambda: os.killpg(os.getpgid(roscore_process.pid), signal.SIGTERM))
+
+
 if __name__ == '__main__':
-    # Initialize ROS node in main thread
+    roscore_process = start_roscore()  # <-- Start roscore here
+
+    if roscore_process:
+        atexit.register(lambda: os.killpg(os.getpgid(roscore_process.pid), signal.SIGTERM))
+
+    # Initialize ROS node
     rospy.init_node('online_monitor', anonymous=True)
 
     # Start ROS subscriber thread
@@ -88,6 +120,5 @@ if __name__ == '__main__':
     ros_thread.daemon = True
     ros_thread.start()
 
-    # Start Flask server (runs in main thread)
-    app.run(host='0.0.0.0', port=5050)
-
+    # Start Flask server (main thread)
+    app.run(host='0.0.0.0', port=5000)
