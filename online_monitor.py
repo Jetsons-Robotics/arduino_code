@@ -16,7 +16,7 @@ data = {
     'theta': None,
     'w_est': None,
     'cpu_temp': None,
-    'camera_node': None
+    # 'camera_node': None
 }
 lock = Lock()
 
