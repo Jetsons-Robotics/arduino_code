@@ -1,0 +1,25 @@
+<!-- cleaning_robot_launcher.launch -->
+<launch>
+  <!-- 1. rosserial Arduino node -->
+  <node pkg="rosserial_python" type="serial_node.py" name="serial_node" output="screen">
+    <param name="port" value="/dev/ttyACM0" />
+    <param name="baud" value="57600" />
+  </node>
+
+  <!-- 2. Joystick node -->
+  <node pkg="joy" type="joy_node" name="joy_node" output="screen" />
+
+  <!-- 3. Teleop twist joy node -->
+  <node pkg="teleop_twist_joy" type="teleop_node" name="teleop_twist_joy_node" output="screen">
+    <param name="axis_linear" value="0" />
+    <param name="axis_angular" value="1" />
+    <param name="scale_linear" value="2.0" />
+    <param name="scale_angular" value="2.0" />
+  </node>
+
+  <!-- 4. Custom Python script -->
+  <!-- <node pkg="cleaning_robot" type="table_monitor.py" name="table_monitor" output="screen" /> -->
+  <node pkg="cleaning_robot" type="online_monitor.py" name="online_monitor" output="screen" />
+  <node pkg="cleaning_robot" type="camera_node.py" name="camera_node" output="screen" />
+  <node pkg="web_video_server" type="web_video_server" name="camera_feed" output="screen" />
+</launch>
